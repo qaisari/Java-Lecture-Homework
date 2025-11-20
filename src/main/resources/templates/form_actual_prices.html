@@ -28,23 +28,7 @@
 <body>
 <div id="wrapper">
     <!-- Sidebar -->
-    <div id="sidebar-wrapper">
-        <div class="sidebar-heading">Student Management</div>
-        <div class="list-group list-group-flush">
-            <span>
-                <a th:href="@{/home}" class="list-group-item list-group-item-action">Home</a>
-            </span>
-            <span>
-                <a th:href="@{/soap}" class="list-group-item list-group-item-action">SOAP</a>
-            </span>
-            <span>
-                <a th:href="@{/ForexAccount}" class="list-group-item list-group-item-action">Forex Account</a>
-            </span>
-            <span>
-                <a th:href="@{/ForexActPriceForm}" class="list-group-item list-group-item-action active">Forex ActPrice</a>
-            </span>
-        </div>
-    </div>
+    <div th:insert="sidebar"></div>
 
     <!-- Page Content -->
     <div id="page-content-wrapper">
@@ -62,7 +46,7 @@
 
                         <div class="card shadow-sm">
                             <div class="card-body">
-                                <form th:action="@{/ForexActPriceResult}" th:object="${par}" method="post" class="row g-3">
+                                <form th:action="@{/forexactprice}" th:object="${par}" method="post" class="row g-3">
                                     <div class="col-md-6">
                                         <label for="currency" class="form-label">Currency Pair</label>
                                         <select id="currency" class="form-select" th:field="*{instrument}">
@@ -75,7 +59,6 @@
 
                                     <div class="col-12 pt-2">
                                         <button type="submit" class="btn btn-primary">Retrieve Prices</button>
-                                        <a th:href="@{/Forex}" class="btn btn-link">Cancel</a>
                                     </div>
                                 </form>
                             </div>

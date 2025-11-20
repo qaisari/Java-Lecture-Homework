@@ -1,0 +1,27 @@
+<div th:fragment="sidebar">
+    <div id="sidebar-wrapper">
+        <div class="sidebar-heading">Student Management</div>
+        <div class="list-group list-group-flush" >
+                <span>
+                    <a th:href="@{/home}" class="list-group-item list-group-item-action"
+                        th:classappend="${uri == '/home'} ? ' active'">Home</a>
+                </span>
+            <span>
+                    <a th:href="@{/soap}" class="list-group-item list-group-item-action"
+                       th:classappend="${uri == '/soap'} ? ' active'">SOAP</a>
+                </span>
+            <span>
+                    <a th:href="@{/forexaccount}" class="list-group-item list-group-item-action"
+                       th:classappend="${uri == '/forexaccount'} ? ' active'">Forex Account</a>
+                </span>
+            <span>
+                    <a th:href="@{/forexactprice}" class="list-group-item list-group-item-action"
+                       th:classappend="${uri == '/forexactprice'} ? ' active'">Forex ActPrice</a>
+                </span>
+            <span>
+                    <a th:href="@{/forexhistprice}" class="list-group-item list-group-item-action"
+                       th:classappend="${uri == '/forexhistprice'} ? ' active'">Forex HistPrice</a>
+                </span>
+        </div>
+    </div>
+</div>

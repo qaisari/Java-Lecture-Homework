@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Prices Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { overflow-x: hidden; }
+        #wrapper { display: flex; width: 100%; }
+        #sidebar-wrapper { min-height: 100vh; width: 15rem; background-color: #f8f9fa; margin-left: -15rem; transition: margin 0.25s ease-out; }
+        #sidebar-wrapper .sidebar-heading { padding: 0.875rem 1.25rem; font-size: 1.2rem; font-weight: bold; color: #333; }
+        #sidebar-wrapper .list-group { width: 15rem; }
+        .list-group-item { border: none; padding: 1rem 1.5rem; color: #495057; text-decoration: none; transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out; }
+        .list-group-item:hover { background-color: #e9ecef; color: #0d6efd; }
+        .list-group-item.active { background-color: #0d6efd; color: white; }
+        #page-content-wrapper { width: 100%; min-height: 100vh; }
+        body.sb-sidenav-toggled #sidebar-wrapper { margin-left: 0; }
+        @media (min-width: 768px) {
+            #sidebar-wrapper { margin-left: 0; }
+            #page-content-wrapper { width: 100%; }
+            body.sb-sidenav-toggled #sidebar-wrapper { margin-left: -15rem; }
+        }
+        .navbar-custom { background-color: #fff; border-bottom: 1px solid #dee2e6; padding: 1rem; }
+        .content { padding: 2rem; }
+        .chart-container { width: 100%; max-width: 800px; height: 400px; margin: 0 auto; }
+        .chart-container canvas { width: 100% !important; height: 100% !important; display: block; }
+        .price-card { border-left: 4px solid; }
+        .price-card.open { border-left-color: #0d6efd; }
+        .price-card.close { border-left-color: #198754; }
+        .price-card.high { border-left-color: #ffc107; }
+        .price-card.low { border-left-color: #dc3545; }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    <!-- Sidebar -->
+    <div th:insert="sidebar"></div>
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <nav class="navbar-custom d-flex justify-content-between align-items-center">
+            <button class="btn btn-primary" id="sidebarToggle">Toggle Menu</button>
+            <h1 class="mb-0">Dashboard</h1>
+        </nav>
+
+        <div class="content">
+            <div class="container">
+                <h2>Historical Prices Result</h2>
+                <p class="text-muted">Candlestick data from OANDA platform</p>
+
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Instrument: <span th:text="${instr}">-</span></h5>
+                        <p class="text-muted small">Granularity: <span th:text="${granularity}">-</span> | Last 10 candles</p>
+
+                        <!-- Latest OHLC Summary Cards -->
+                        <div class="row g-3 mt-2" th:if="${closePrices != null and !closePrices.isEmpty()}">
+                            <div class="col-md-3">
+                                <div class="card bg-light price-card open">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-1">OPEN</h6>
+                                        <h5 class="mb-0" th:text="${openPrices[openPrices.size() - 1]}">-</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light price-card high">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-1">HIGH</h6>
+                                        <h5 class="mb-0" th:text="${highPrices[highPrices.size() - 1]}">-</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light price-card low">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-1">LOW</h6>
+                                        <h5 class="mb-0" th:text="${lowPrices[lowPrices.size() - 1]}">-</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light price-card close">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-1">CLOSE</h6>
+                                        <h5 class="mb-0" th:text="${closePrices[closePrices.size() - 1]}">-</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Price Chart</h5>
+                        <div class="chart-container mt-3">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Table -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Candlestick Data</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Open</th>
+                                    <th>High</th>
+                                    <th>Low</th>
+                                    <th>Close</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="idx, stat : ${timestamps}">
+                                    <td th:text="${timestamps[stat.index]}">-</td>
+                                    <td th:text="${openPrices[stat.index]}">-</td>
+                                    <td th:text="${highPrices[stat.index]}">-</td>
+                                    <td th:text="${lowPrices[stat.index]}">-</td>
+                                    <td th:text="${closePrices[stat.index]}">-</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#rawPrice" aria-expanded="false">View raw data</button>
+                        </div>
+                        <div class="collapse mt-2" id="rawPrice">
+                            <pre class="bg-light p-3 small" style="font-size: 0.85rem;" th:utext="${price}">No data</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <a th:href="@{/forexhistprice}" class="btn btn-primary">Select another instrument</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var timestamps = /*[[${timestamps}]]*/ [];
+    var openPrices = /*[[${openPrices}]]*/ [];
+    var highPrices = /*[[${highPrices}]]*/ [];
+    var lowPrices = /*[[${lowPrices}]]*/ [];
+    var closePrices = /*[[${closePrices}]]*/ [];
+    /*]]>*/
+
+    timestamps = timestamps || [];
+    openPrices = (openPrices || []).map(function(v){ return Number(v) || 0; });
+    highPrices = (highPrices || []).map(function(v){ return Number(v) || 0; });
+    lowPrices = (lowPrices || []).map(function(v){ return Number(v) || 0; });
+    closePrices = (closePrices || []).map(function(v){ return Number(v) || 0; });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!timestamps.length || !closePrices.length) {
+            var container = document.querySelector('.chart-container');
+            if (container) {
+                container.innerHTML = '<div class="p-4 text-center text-muted">No data available.</div>';
+            }
+            return;
+        }
+
+        // Simple chart showing High/Low/Close
+        var canvas = document.getElementById('priceChart');
+        var ctx = canvas.getContext('2d');
+
+        var allPrices = [...closePrices, ...highPrices, ...lowPrices];
+        var minVal = Math.min(...allPrices);
+        var maxVal = Math.max(...allPrices);
+        var padding = (maxVal - minVal) * 0.1;
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [
+                    {
+                        label: 'Close',
+                        data: closePrices,
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25,135,84,0.1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointRadius: 3
+                    },
+                    {
+                        label: 'High',
+                        data: highPrices,
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255,193,7,0.1)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        tension: 0.1,
+                        pointRadius: 2
+                    },
+                    {
+                        label: 'Low',
+                        data: lowPrices,
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220,53,69,0.1)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        tension: 0.1,
+                        pointRadius: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false },
+                scales: {
+                    x: { ticks: { maxRotation: 45, minRotation: 0, autoSkip: true } },
+                    y: {
+                        beginAtZero: false,
+                        suggestedMin: minVal - padding,
+                        suggestedMax: maxVal + padding
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const toggleBtn = document.getElementById('sidebarToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            document.body.classList.toggle('sb-sidenav-toggled');
+        });
+    }
+</script>
+</body>
+</html>
+

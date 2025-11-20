@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOAP Form</title>
+    <title>Historical Prices Form</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body { overflow-x: hidden; }
@@ -41,35 +41,35 @@
             <div class="container">
                 <div class="row">
                     <div class="col-lg-8">
-                        <h2>Get Historical Exchange Rates</h2>
-                        <p class="text-muted">Select currency and date range to retrieve historical exchange rates from the SOAP service.</p>
+                        <h2>Get Historical Prices</h2>
+                        <p class="text-muted">Select currency pair and timeframe to retrieve candlestick data from the OANDA platform.</p>
 
                         <div class="card shadow-sm">
                             <div class="card-body">
-                                <form th:action="@{/soap}" th:object="${param}" method="post" class="row g-3">
+                                <form th:action="@{/forexhistprice}" th:object="${param}" method="post" class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="currency" class="form-label">Currency</label>
-                                        <select id="currency" class="form-select" th:field="*{currency}">
-                                            <option value="EUR">EUR</option>
-                                            <option value="USD">USD</option>
-                                            <option value="GBP">GBP</option>
-                                            <option value="JPY">JPY</option>
+                                        <label for="currency" class="form-label">Currency Pair</label>
+                                        <select id="currency" class="form-select" th:field="*{instrument}">
+                                            <option value="EUR_USD">EUR/USD</option>
+                                            <option value="USD_CHF">USD/CHF</option>
+                                            <option value="GBP_USD">GBP/USD</option>
+                                            <option value="USD_JPY">USD/JPY</option>
                                         </select>
                                     </div>
 
-                                    <div class="col-md-3">
-                                        <label for="startDate" class="form-label">Start date</label>
-                                        <input id="startDate" type="date" th:field="*{startDate}" class="form-control" required>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label for="endDate" class="form-label">End date</label>
-                                        <input id="endDate" type="date" th:field="*{endDate}" class="form-control" required>
+                                    <div class="col-md-6">
+                                        <label for="granularity" class="form-label">Timeframe (Granularity)</label>
+                                        <select id="granularity" class="form-select" th:field="*{granularity}">
+                                            <option value="M1">1 Minute (M1)</option>
+                                            <option value="H1">1 Hour (H1)</option>
+                                            <option value="D">Daily (D)</option>
+                                            <option value="W">Weekly (W)</option>
+                                            <option value="M">Monthly (M)</option>
+                                        </select>
                                     </div>
 
                                     <div class="col-12 pt-2">
-                                        <button type="submit" class="btn btn-primary">Retrieve Rates</button>
-                                        <a th:href="@{/home}" class="btn btn-link">Cancel</a>
+                                        <button type="submit" class="btn btn-primary">Retrieve Historical Data</button>
                                     </div>
                                 </form>
                             </div>
@@ -80,8 +80,15 @@
                     <div class="col-lg-4 d-none d-lg-block">
                         <div class="card border-0">
                             <div class="card-body">
-                                <h5 class="card-title">About this tool</h5>
-                                <p class="card-text text-muted">This form calls the central bank's SOAP service and returns exchange rates for the chosen currency and date range. Results display as a chart and table.</p>
+                                <h5 class="card-title">About Historical Data</h5>
+                                <p class="card-text text-muted">This form retrieves historical candlestick data from OANDA. Candlesticks show open, high, low, and close (OHLC) prices for each time period.</p>
+                                <ul class="text-muted small">
+                                    <li><strong>M1:</strong> 1-minute candles</li>
+                                    <li><strong>H1:</strong> 1-hour candles</li>
+                                    <li><strong>D:</strong> Daily candles</li>
+                                    <li><strong>W:</strong> Weekly candles</li>
+                                    <li><strong>M:</strong> Monthly candles</li>
+                                </ul>
                             </div>
                         </div>
                     </div>

@@ -35,23 +35,7 @@
 <body>
 <div id="wrapper">
     <!-- Sidebar -->
-    <div id="sidebar-wrapper">
-        <div class="sidebar-heading">Student Management</div>
-        <div class="list-group list-group-flush">
-            <span>
-                <a th:href="@{/home}" class="list-group-item list-group-item-action">Home</a>
-            </span>
-            <span>
-                <a th:href="@{/soap}" class="list-group-item list-group-item-action active">SOAP</a>
-            </span>
-            <span>
-                <a th:href="@{/ForexAccount}" class="list-group-item list-group-item-action">Forex Account</a>
-            </span>
-            <span>
-                <a th:href="@{/ForexActPriceForm}" class="list-group-item list-group-item-action">Forex ActPrice</a>
-            </span>
-        </div>
-    </div>
+    <div th:insert="sidebar"></div>
 
     <!-- Page Content -->
     <div id="page-content-wrapper">
