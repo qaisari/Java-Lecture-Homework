@@ -2,6 +2,9 @@ package com.example.lectureHomework;
 
 import com.oanda.v20.Context;
 import com.oanda.v20.account.AccountSummary;
+import com.oanda.v20.pricing.ClientPrice;
+import com.oanda.v20.pricing.PricingGetRequest;
+import com.oanda.v20.pricing.PricingGetResponse;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,6 +30,7 @@ import java.util.List;
 @SpringBootApplication
 @Controller
 public class HomeController {
+    Context ctx = new Context(Config.URL, Config.TOKEN);
     @GetMapping("/")
     public String index(){
         return "index";
@@ -88,9 +92,8 @@ public class HomeController {
         return "soapresult";
     }
 
-    @GetMapping("/Forex")
+    @GetMapping("/ForexAccount")
     public String f1(Model model) {
-        Context ctx = new Context(Config.URL, Config.TOKEN);
         try {
             AccountSummary summary = ctx.account.summary(Config.ACCOUNTID).getAccount();
             // Put raw object on model (template can access properties if available)
@@ -150,6 +153,61 @@ public class HomeController {
             model.addAttribute("accountStr", "Error: " + e.getMessage());
         }
         return "forexAccount";
+    }
+
+    @GetMapping("/ForexActPriceForm")
+    public String actual_prices(Model model) {
+        model.addAttribute("par", new MessageActPrice());
+        return "form_actual_prices";
+    }
+
+    @PostMapping("/ForexActPriceResult")
+    public String actual_prices2(@ModelAttribute MessageActPrice messageActPrice, Model model) {
+        Context ctx = new Context(Config.URL, Config.TOKEN);
+        String strOut="";
+        List<String> instruments = new ArrayList<>();
+        instruments.add(messageActPrice.getInstrument());
+
+        try {
+            PricingGetRequest request = new PricingGetRequest(Config.ACCOUNTID, instruments);
+            PricingGetResponse resp = ctx.pricing.get(request);
+
+            // Extract price data in a cleaner format
+            List<String> askPrices = new ArrayList<>();
+            List<String> bidPrices = new ArrayList<>();
+            String instrument = "";
+            String timestamp = "";
+
+            for (ClientPrice price : resp.getPrices()) {
+                strOut += price + "<br>";
+                instrument = price.getInstrument().toString();
+
+                // Try to extract bid/ask prices if available
+                try {
+                    if (price.getBids() != null && !price.getBids().isEmpty()) {
+                        bidPrices.add(price.getBids().get(0).getPrice().toString());
+                    }
+                    if (price.getAsks() != null && !price.getAsks().isEmpty()) {
+                        askPrices.add(price.getAsks().get(0).getPrice().toString());
+                    }
+                    if (price.getTime() != null) {
+                        timestamp = price.getTime().toString();
+                    }
+                } catch (Exception ignored) {}
+            }
+
+            model.addAttribute("askPrices", askPrices);
+            model.addAttribute("bidPrices", bidPrices);
+            model.addAttribute("timestamp", timestamp);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            strOut = "Error retrieving prices: " + e.getMessage();
+        }
+
+        model.addAttribute("instr", messageActPrice.getInstrument());
+        model.addAttribute("price", strOut);
+        return "result_actual_prices";
     }
 
 }
