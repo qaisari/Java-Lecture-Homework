@@ -5,6 +5,9 @@ import com.oanda.v20.account.AccountSummary;
 import com.oanda.v20.instrument.Candlestick;
 import com.oanda.v20.instrument.InstrumentCandlesRequest;
 import com.oanda.v20.instrument.InstrumentCandlesResponse;
+import com.oanda.v20.order.MarketOrderRequest;
+import com.oanda.v20.order.OrderCreateRequest;
+import com.oanda.v20.order.OrderCreateResponse;
 import com.oanda.v20.pricing.ClientPrice;
 import com.oanda.v20.pricing.PricingGetRequest;
 import com.oanda.v20.pricing.PricingGetResponse;
@@ -287,6 +290,55 @@ public class HomeController {
         model.addAttribute("granularity", messageHistPrice.getGranularity());
         model.addAttribute("price", strOut);
         return "result_hist_prices";
+    }
+
+    @GetMapping("/openposition")
+    public String open_position(Model model, HttpServletRequest request) {
+        model.addAttribute("uri", request.getRequestURI().toLowerCase());
+        model.addAttribute("param", new MessageOpenPosition());
+        return "form_open_position";
+    }
+    @PostMapping("/openposition")
+    public String open_position2(@ModelAttribute MessageOpenPosition messageOpenPosition, Model model, HttpServletRequest req) {
+        Context ctx = new Context(Config.URL, Config.TOKEN);
+        String strOut;
+        String tradePrice = "";
+        String tradeTime = "";
+
+        try {
+            InstrumentName instrument = new InstrumentName(messageOpenPosition.getInstrument());
+            OrderCreateRequest request = new OrderCreateRequest(Config.ACCOUNTID);
+            MarketOrderRequest marketorderrequest = new MarketOrderRequest();
+            marketorderrequest.setInstrument(instrument);
+            marketorderrequest.setUnits(messageOpenPosition.getUnits());
+            request.setOrder(marketorderrequest);
+            OrderCreateResponse response = ctx.order.create(request);
+
+            strOut = "tradeId: " + response.getOrderFillTransaction().getId();
+
+            // Extract additional details if available
+            try {
+                if (response.getOrderFillTransaction().getPrice() != null) {
+                    tradePrice = response.getOrderFillTransaction().getPrice().toString();
+                }
+                if (response.getOrderFillTransaction().getTime() != null) {
+                    tradeTime = response.getOrderFillTransaction().getTime().toString();
+                }
+            } catch (Exception ignored) {}
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            strOut = "Error opening position: " + e.getMessage();
+        }
+
+        model.addAttribute("uri", req.getRequestURI().toLowerCase());
+        model.addAttribute("instr", messageOpenPosition.getInstrument());
+        model.addAttribute("units", messageOpenPosition.getUnits());
+        model.addAttribute("id", strOut);
+        model.addAttribute("tradePrice", tradePrice);
+        model.addAttribute("tradeTime", tradeTime);
+
+        return "result_open_position";
     }
 
 }
