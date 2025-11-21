@@ -12,6 +12,7 @@ import com.oanda.v20.pricing.ClientPrice;
 import com.oanda.v20.pricing.PricingGetRequest;
 import com.oanda.v20.pricing.PricingGetResponse;
 import com.oanda.v20.primitives.InstrumentName;
+import com.oanda.v20.trade.Trade;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
@@ -339,6 +340,65 @@ public class HomeController {
         model.addAttribute("tradeTime", tradeTime);
 
         return "result_open_position";
+    }
+
+    @GetMapping("/positions")
+    public String positions(Model model, HttpServletRequest request) {
+        Context ctx = new Context(Config.URL, Config.TOKEN);
+
+        List<String> tradeIds = new ArrayList<>();
+        List<String> instruments = new ArrayList<>();
+        List<String> openTimes = new ArrayList<>();
+        List<String> units = new ArrayList<>();
+        List<String> prices = new ArrayList<>();
+        List<String> unrealizedPLs = new ArrayList<>();
+
+        String errorMessage = null;
+        int totalPositions = 0;
+        double totalUnrealizedPL = 0.0;
+
+        try {
+            List<Trade> trades = ctx.trade.listOpen(Config.ACCOUNTID).getTrades();
+            totalPositions = trades.size();
+
+            for (Trade trade : trades) {
+                tradeIds.add(trade.getId() != null ? trade.getId().toString() : "-");
+                instruments.add(trade.getInstrument() != null ? trade.getInstrument().toString() : "-");
+                openTimes.add(trade.getOpenTime() != null ? trade.getOpenTime().toString() : "-");
+
+                String unitsStr = trade.getCurrentUnits() != null ? trade.getCurrentUnits().toString() : "0";
+                units.add(unitsStr);
+
+                String priceStr = trade.getPrice() != null ? trade.getPrice().toString() : "0";
+                prices.add(priceStr);
+
+                String plStr = trade.getUnrealizedPL() != null ? trade.getUnrealizedPL().toString() : "0";
+                unrealizedPLs.add(plStr);
+
+                // Calculate total P/L
+                try {
+                    double pl = Double.parseDouble(plStr.replace(",", "."));
+                    totalUnrealizedPL += pl;
+                } catch (NumberFormatException ignored) {}
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            errorMessage = "Error retrieving positions: " + e.getMessage();
+        }
+
+        model.addAttribute("uri", request.getRequestURI().toLowerCase());
+        model.addAttribute("tradeIds", tradeIds);
+        model.addAttribute("instruments", instruments);
+        model.addAttribute("openTimes", openTimes);
+        model.addAttribute("units", units);
+        model.addAttribute("prices", prices);
+        model.addAttribute("unrealizedPLs", unrealizedPLs);
+        model.addAttribute("totalPositions", totalPositions);
+        model.addAttribute("totalUnrealizedPL", String.format("%.2f", totalUnrealizedPL));
+        model.addAttribute("errorMessage", errorMessage);
+
+        return "positions";
     }
 
 }
