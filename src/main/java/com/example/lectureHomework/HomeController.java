@@ -41,7 +41,6 @@ import static com.oanda.v20.instrument.CandlestickGranularity.*;
 import static com.oanda.v20.instrument.CandlestickGranularity.M;
 import static com.oanda.v20.instrument.CandlestickGranularity.W;
 
-@SpringBootApplication
 @Controller
 public class HomeController {
     Context ctx = new Context(Config.URL, Config.TOKEN);
