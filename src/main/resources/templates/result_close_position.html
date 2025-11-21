@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Position Closed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { overflow-x: hidden; }
+        #wrapper { display: flex; width: 100%; }
+        #sidebar-wrapper { min-height: 100vh; width: 15rem; background-color: #f8f9fa; margin-left: -15rem; transition: margin 0.25s ease-out; }
+        #sidebar-wrapper .sidebar-heading { padding: 0.875rem 1.25rem; font-size: 1.2rem; font-weight: bold; color: #333; }
+        #sidebar-wrapper .list-group { width: 15rem; }
+        .list-group-item { border: none; padding: 1rem 1.5rem; color: #495057; text-decoration: none; transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out; }
+        .list-group-item:hover { background-color: #e9ecef; color: #0d6efd; }
+        .list-group-item.active { background-color: #0d6efd; color: white; }
+        #page-content-wrapper { width: 100%; min-height: 100vh; }
+        body.sb-sidenav-toggled #sidebar-wrapper { margin-left: 0; }
+        @media (min-width: 768px) {
+            #sidebar-wrapper { margin-left: 0; }
+            #page-content-wrapper { width: 100%; }
+            body.sb-sidenav-toggled #sidebar-wrapper { margin-left: -15rem; }
+        }
+        .navbar-custom { background-color: #fff; border-bottom: 1px solid #dee2e6; padding: 1rem; }
+        .content { padding: 2rem; }
+        .success-icon { font-size: 4rem; color: #198754; }
+        .error-icon { font-size: 4rem; color: #dc3545; }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    <!-- Sidebar -->
+    <div th:insert="~{sidebar :: sidebar}"></div>
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <nav class="navbar-custom d-flex justify-content-between align-items-center">
+            <button class="btn btn-primary" id="sidebarToggle">Toggle Menu</button>
+            <h1 class="mb-0">Dashboard</h1>
+        </nav>
+
+        <div class="content">
+            <div class="container">
+                <h2>Position Closed</h2>
+                <p class="text-muted">Your position has been processed</p>
+
+                <!-- Success Card -->
+                <div th:if="${success}" class="card shadow-sm mb-3 border-success">
+                    <div class="card-body text-center py-4">
+                        <div class="success-icon mb-3">✓</div>
+                        <h4 class="text-success mb-3">Position Closed Successfully</h4>
+                        <p class="text-muted">Your profit/loss has been realized and added to your account balance</p>
+                    </div>
+                </div>
+
+                <!-- Error Card -->
+                <div th:if="${!success}" class="card shadow-sm mb-3 border-danger">
+                    <div class="card-body text-center py-4">
+                        <div class="error-icon mb-3">✗</div>
+                        <h4 class="text-danger mb-3">Error Closing Position</h4>
+                        <p class="text-muted" th:text="${message}">An error occurred</p>
+                    </div>
+                </div>
+
+                <!-- Close Details -->
+                <div th:if="${success}" class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Close Transaction Details</h5>
+
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Trade ID</h6>
+                                        <h5 class="mb-0"><code th:text="${tradeId}">-</code></h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Instrument</h6>
+                                        <h5 class="mb-0" th:text="${closedInstrument}">-</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Units Closed</h6>
+                                        <h5 class="mb-0" th:text="${closedUnits}">-</h5>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="text-muted mb-2">Close Price</h6>
+                                        <h5 class="mb-0" th:text="${closePrice}">-</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Realized P/L Card -->
+                        <div class="row g-3 mt-3">
+                            <div class="col-12">
+                                <div class="card" th:classappend="${realizedPL != null and !realizedPL.startsWith('-')} ? 'border-success bg-success bg-opacity-10' : 'border-danger bg-danger bg-opacity-10'">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted mb-2">REALIZED PROFIT/LOSS</h6>
+                                        <h2 class="mb-0" th:classappend="${realizedPL != null and !realizedPL.startsWith('-')} ? 'text-success' : 'text-danger'">
+                                            <span th:text="${realizedPL}">0.00</span>
+                                        </h2>
+                                        <p class="small text-muted mb-0 mt-2">This amount has been added to your account balance</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div th:if="${success}" class="alert alert-info" role="alert">
+                    <h6 class="alert-heading">What happened?</h6>
+                    <ul class="mb-0 small">
+                        <li>Your position has been closed at the current market price</li>
+                        <li>The realized P/L has been added to (or subtracted from) your account balance</li>
+                        <li>You no longer hold this position</li>
+                    </ul>
+                </div>
+
+                <!-- Actions -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">What's Next?</h5>
+                        <p class="text-muted">You can view your account details, check remaining positions, or close another position.</p>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a th:href="@{/forexaccount}" class="btn btn-outline-primary">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-wallet2" viewBox="0 0 16 16">
+                                    <path d="M12.136.326A1.5 1.5 0 0 1 14 1.78V3h.5A1.5 1.5 0 0 1 16 4.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 0 13.5v-9a1.5 1.5 0 0 1 1.432-1.499L12.136.326zM5.562 3H13V1.78a.5.5 0 0 0-.621-.484L5.562 3zM1.5 4a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5h-13z"/>
+                                </svg>
+                                View Account Summary
+                            </a>
+                            <a th:href="@{/positions}" class="btn btn-outline-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-ul" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm-3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                </svg>
+                                View All Positions
+                            </a>
+                            <a th:href="@{/closeposition}" class="btn btn-outline-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                </svg>
+                                Close Another Position
+                            </a>
+                            <a th:href="@{/openposition}" class="btn btn-success">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                </svg>
+                                Open New Position
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const toggleBtn = document.getElementById('sidebarToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            document.body.classList.toggle('sb-sidenav-toggled');
+        });
+    }
+</script>
+</body>
+</html>
+

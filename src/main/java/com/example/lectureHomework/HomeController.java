@@ -13,6 +13,8 @@ import com.oanda.v20.pricing.PricingGetRequest;
 import com.oanda.v20.pricing.PricingGetResponse;
 import com.oanda.v20.primitives.InstrumentName;
 import com.oanda.v20.trade.Trade;
+import com.oanda.v20.trade.TradeCloseRequest;
+import com.oanda.v20.trade.TradeSpecifier;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
@@ -20,7 +22,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -48,11 +49,6 @@ public class HomeController {
     public String index(HttpServletRequest request, Model model) {
         model.addAttribute("uri", request.getRequestURI());
         return "index";
-    }
-    @GetMapping("/home")
-    public String home(Model model, HttpServletRequest request){
-        model.addAttribute("uri", request.getRequestURI());
-        return "home";
     }
 
     @GetMapping("/soap")
@@ -387,7 +383,7 @@ public class HomeController {
             errorMessage = "Error retrieving positions: " + e.getMessage();
         }
 
-        model.addAttribute("uri", request.getRequestURI().toLowerCase());
+        model.addAttribute("uri", request.getRequestURI());
         model.addAttribute("tradeIds", tradeIds);
         model.addAttribute("instruments", instruments);
         model.addAttribute("openTimes", openTimes);
@@ -401,4 +397,84 @@ public class HomeController {
         return "positions";
     }
 
+    @GetMapping("/closeposition")
+    public String close_position(Model model, HttpServletRequest request) {
+        Context ctx = new Context(Config.URL, Config.TOKEN);
+
+        List<String> tradeIds = new ArrayList<>();
+        List<String> instruments = new ArrayList<>();
+        List<String> units = new ArrayList<>();
+        List<String> unrealizedPLs = new ArrayList<>();
+
+        try {
+            List<Trade> trades = ctx.trade.listOpen(Config.ACCOUNTID).getTrades();
+
+            for (Trade trade : trades) {
+                tradeIds.add(trade.getId() != null ? trade.getId().toString() : "-");
+                instruments.add(trade.getInstrument() != null ? trade.getInstrument().toString() : "-");
+                units.add(trade.getCurrentUnits() != null ? trade.getCurrentUnits().toString() : "0");
+                unrealizedPLs.add(trade.getUnrealizedPL() != null ? trade.getUnrealizedPL().toString() : "0");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        model.addAttribute("uri", request.getRequestURI().toLowerCase());
+        model.addAttribute("param", new MessageClosePosition());
+        model.addAttribute("tradeIds", tradeIds);
+        model.addAttribute("instruments", instruments);
+        model.addAttribute("units", units);
+        model.addAttribute("unrealizedPLs", unrealizedPLs);
+
+        return "form_close_position";
+    }
+    @PostMapping("/closeposition")
+    public String close_position2(@ModelAttribute MessageClosePosition messageClosePosition, Model model, HttpServletRequest request) {
+        Context ctx = new Context(Config.URL, Config.TOKEN);
+        String tradeId = messageClosePosition.getTradeId() + "";
+        String strOut = "Closed tradeId= " + tradeId;
+        String closedInstrument = "";
+        String closedUnits = "";
+        String realizedPL = "";
+        String closePrice = "";
+        boolean success = false;
+
+        try {
+            com.oanda.v20.trade.TradeCloseResponse response = ctx.trade.close(new TradeCloseRequest(Config.ACCOUNTID, new TradeSpecifier(tradeId)));
+            success = true;
+
+            // Extract details from response
+            if (response.getOrderFillTransaction() != null) {
+                if (response.getOrderFillTransaction().getInstrument() != null) {
+                    closedInstrument = response.getOrderFillTransaction().getInstrument().toString();
+                }
+                if (response.getOrderFillTransaction().getUnits() != null) {
+                    closedUnits = response.getOrderFillTransaction().getUnits().toString();
+                }
+                if (response.getOrderFillTransaction().getPl() != null) {
+                    realizedPL = response.getOrderFillTransaction().getPl().toString();
+                }
+                if (response.getOrderFillTransaction().getPrice() != null) {
+                    closePrice = response.getOrderFillTransaction().getPrice().toString();
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            strOut = "Error closing position: " + e.getMessage();
+            success = false;
+        }
+
+        model.addAttribute("uri", request.getRequestURI().toLowerCase());
+        model.addAttribute("tradeId", tradeId);
+        model.addAttribute("message", strOut);
+        model.addAttribute("closedInstrument", closedInstrument);
+        model.addAttribute("closedUnits", closedUnits);
+        model.addAttribute("realizedPL", realizedPL);
+        model.addAttribute("closePrice", closePrice);
+        model.addAttribute("success", success);
+
+        return "result_close_position";
+    }
 }

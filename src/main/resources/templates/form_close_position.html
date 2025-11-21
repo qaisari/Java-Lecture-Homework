@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Close Position</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { overflow-x: hidden; }
+        #wrapper { display: flex; width: 100%; }
+        #sidebar-wrapper { min-height: 100vh; width: 15rem; background-color: #f8f9fa; margin-left: -15rem; transition: margin 0.25s ease-out; }
+        #sidebar-wrapper .sidebar-heading { padding: 0.875rem 1.25rem; font-size: 1.2rem; font-weight: bold; color: #333; }
+        #sidebar-wrapper .list-group { width: 15rem; }
+        .list-group-item { border: none; padding: 1rem 1.5rem; color: #495057; text-decoration: none; transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out; }
+        .list-group-item:hover { background-color: #e9ecef; color: #0d6efd; }
+        .list-group-item.active { background-color: #0d6efd; color: white; }
+        #page-content-wrapper { width: 100%; min-height: 100vh; }
+        body.sb-sidenav-toggled #sidebar-wrapper { margin-left: 0; }
+        @media (min-width: 768px) {
+            #sidebar-wrapper { margin-left: 0; }
+            #page-content-wrapper { width: 100%; }
+            body.sb-sidenav-toggled #sidebar-wrapper { margin-left: -15rem; }
+        }
+        .navbar-custom { background-color: #fff; border-bottom: 1px solid #dee2e6; padding: 1rem; }
+        .content { padding: 2rem; }
+    </style>
+</head>
+<body>
+<div id="wrapper">
+    <!-- Sidebar -->
+    <div th:insert="~{sidebar :: sidebar}"></div>
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+        <nav class="navbar-custom d-flex justify-content-between align-items-center">
+            <button class="btn btn-primary" id="sidebarToggle">Toggle Menu</button>
+            <h1 class="mb-0">Dashboard</h1>
+        </nav>
+
+        <div class="content">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h2>Close Trading Position</h2>
+                        <p class="text-muted">Select an open position to close and realize your profit or loss.</p>
+
+                        <!-- No Positions Message -->
+                        <div th:if="${tradeIds == null or tradeIds.isEmpty()}" class="alert alert-info" role="alert">
+                            <h5 class="alert-heading">No Open Positions</h5>
+                            <p>You currently have no open positions to close.</p>
+                            <hr>
+                            <p class="mb-0">
+                                <a th:href="@{/openposition}" class="btn btn-primary btn-sm">Open a Position First</a>
+                                <a th:href="@{/positions}" class="btn btn-outline-secondary btn-sm">View All Positions</a>
+                            </p>
+                        </div>
+
+                        <!-- Form -->
+                        <div th:if="${tradeIds != null and !tradeIds.isEmpty()}" class="card shadow-sm">
+                            <div class="card-body">
+                                <form th:action="@{/closeposition}" th:object="${param}" method="post" class="row g-3">
+                                    <div class="col-12">
+                                        <label for="tradeSelect" class="form-label">Select Position to Close</label>
+                                        <select id="tradeSelect" class="form-select form-select-lg" th:field="*{tradeId}" required>
+                                            <option value="" selected disabled>-- Choose a position --</option>
+                                            <option th:each="id, stat : ${tradeIds}"
+                                                    th:value="${tradeIds[stat.index]}"
+                                                    th:text="|ID: ${tradeIds[stat.index]} - ${instruments[stat.index]} - Units: ${units[stat.index]} - P/L: ${unrealizedPLs[stat.index]}|">
+                                            </option>
+                                        </select>
+                                        <div class="form-text">Select the trade ID you want to close from your open positions</div>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="alert alert-warning" role="alert">
+                                            <strong>⚠️ Warning:</strong> Closing a position will immediately realize your profit or loss. This action cannot be undone.
+                                        </div>
+                                    </div>
+
+                                    <div class="col-12 pt-2">
+                                        <button type="submit" class="btn btn-danger btn-lg">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-circle" viewBox="0 0 16 16">
+                                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                                            </svg>
+                                            Close Position
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Current Positions Summary -->
+                        <div th:if="${tradeIds != null and !tradeIds.isEmpty()}" class="mt-4">
+                            <div class="card border-0">
+                                <div class="card-body">
+                                    <h5 class="card-title">Your Open Positions</h5>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="table-light">
+                                            <tr>
+                                                <th>Trade ID</th>
+                                                <th>Instrument</th>
+                                                <th>Units</th>
+                                                <th class="text-end">Unrealized P/L</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="id, stat : ${tradeIds}">
+                                                <td><code class="small" th:text="${tradeIds[stat.index]}">-</code></td>
+                                                <td><strong th:text="${instruments[stat.index]}">-</strong></td>
+                                                <td th:text="${units[stat.index]}">-</td>
+                                                <td class="text-end">
+                                                    <span th:classappend="${!unrealizedPLs[stat.index].startsWith('-')} ? 'text-success' : 'text-danger'"
+                                                          th:text="${unrealizedPLs[stat.index]}">-</span>
+                                                </td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-4 d-none d-lg-block">
+                        <div class="card border-0">
+                            <div class="card-body">
+                                <h5 class="card-title">About Closing Positions</h5>
+                                <p class="card-text text-muted">When you close a position, your unrealized profit or loss becomes <strong>realized</strong> and is added to your account balance.</p>
+                                <ul class="text-muted small">
+                                    <li><strong>Realized P/L:</strong> The actual profit or loss after closing</li>
+                                    <li><strong>Permanent:</strong> Closing cannot be undone</li>
+                                    <li><strong>Balance Update:</strong> Your account balance updates immediately</li>
+                                </ul>
+                                <div class="alert alert-info mt-3">
+                                    <small><strong>Tip:</strong> Check the current price before closing to ensure you're happy with the realized P/L.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const toggleBtn = document.getElementById('sidebarToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+            document.body.classList.toggle('sb-sidenav-toggled');
+        });
+    }
+</script>
+</body>
+</html>
